@@ -84,7 +84,6 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <!-- Header -->
     <header class="gradient-bg text-white py-6 px-4 sticky top-0 z-40">
         <div class="max-w-4xl mx-auto">
             <div class="flex items-center justify-between">
@@ -105,9 +104,7 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 py-6">
-        <!-- Trip Selector -->
         <div class="bg-white rounded-2xl card-shadow p-4 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="font-semibold text-gray-800">Current Trip</h2>
@@ -116,7 +113,6 @@
             </div>
             <div id="tripInfo" class="flex items-center gap-4 text-sm text-gray-600">
             </div>
-            <!-- Progress Bar -->
             <div class="mt-4">
                 <div class="flex justify-between text-sm mb-2">
                     <span class="text-gray-600">Packing Progress</span>
@@ -128,7 +124,6 @@
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
             <button onclick="switchTab('packing')" id="tab-packing" class="tab-active px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all">
                 <i class="fas fa-box mr-2"></i>Packing List
@@ -147,19 +142,17 @@
             </button>
         </div>
 
-        <!-- Labels Filter -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-semibold text-gray-700">Filter by Label</h3>
                 <button onclick="openLabelModal()" class="text-purple-600 text-sm hover:text-purple-700">
-                    <i class="fas fa-plus mr-1"></i>Add Label
+                    <i class="fas fa-cog mr-1"></i>Manage Labels
                 </button>
             </div>
             <div id="labelsContainer" class="flex flex-wrap gap-2">
             </div>
         </div>
 
-        <!-- Tab Content -->
         <div id="content-packing" class="tab-content">
             <div class="bg-white rounded-2xl card-shadow p-6">
                 <div class="flex items-center justify-between mb-6">
@@ -233,7 +226,6 @@
         </div>
     </main>
 
-    <!-- Add Item Modal -->
     <div id="addItemModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
             <div class="p-6">
@@ -277,17 +269,18 @@
         </div>
     </div>
 
-    <!-- Add Label Modal -->
     <div id="addLabelModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
+        <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in max-h-[90vh] overflow-y-auto">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-semibold">Add Custom Label</h3>
+                    <h3 class="text-xl font-semibold">Manage Labels</h3>
                     <button onclick="closeModal('addLabelModal')" class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                <form onsubmit="handleAddLabel(event)">
+                
+                <form onsubmit="handleAddLabel(event)" class="mb-8 border-b pb-6">
+                    <h4 class="font-medium text-gray-800 mb-3">Create New Label</h4>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Label Name</label>
@@ -312,11 +305,16 @@
                         </button>
                     </div>
                 </form>
+
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">Existing Labels</h4>
+                    <div id="existingLabelsList" class="space-y-2">
+                        </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Reminder Modal -->
     <div id="addReminderModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
             <div class="p-6">
@@ -349,7 +347,6 @@
         </div>
     </div>
 
-    <!-- Add Trip Modal -->
     <div id="addTripModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
             <div class="p-6">
@@ -543,6 +540,29 @@
                     </button>
                 `).join('')}
             `;
+        }
+
+        // NEW: Render the management list in the modal
+        function renderManageLabelsList() {
+            const container = document.getElementById('existingLabelsList');
+            if (!container) return;
+
+            if (state.labels.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm">No labels created yet.</p>';
+                return;
+            }
+
+            container.innerHTML = state.labels.map(label => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded-full ${label.color}"></div>
+                        <span class="text-gray-700 font-medium">${label.name}</span>
+                    </div>
+                    <button onclick="deleteLabel(${label.id})" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Delete Label">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `).join('');
         }
 
         function renderPackingList() {
@@ -838,6 +858,23 @@
             render();
         }
 
+        // NEW: Function to delete a label
+        function deleteLabel(labelId) {
+            if (!confirm('Are you sure? Items using this label will become Uncategorized.')) return;
+
+            // Remove label from state
+            state.labels = state.labels.filter(l => l.id !== labelId);
+
+            // If the deleted label was the active filter, reset to 'all'
+            if (state.activeFilter === labelId) {
+                state.activeFilter = 'all';
+            }
+
+            saveState();
+            render();
+            renderManageLabelsList(); // Re-render the list in the modal
+        }
+
         function addCatalogItemToPacking(catalogItemId) {
             const catalogItem = state.catalog.find(i => i.id === catalogItemId);
             if (!catalogItem) return;
@@ -881,6 +918,7 @@
         function openLabelModal() {
             document.getElementById('labelName').value = '';
             selectColor('bg-blue-500');
+            renderManageLabelsList(); // Render existing labels when modal opens
             openModal('addLabelModal');
         }
 
@@ -966,9 +1004,13 @@
                 color
             });
             
+            // Reset form
+            document.getElementById('labelName').value = '';
+            selectColor('bg-blue-500');
+
             saveState();
             render();
-            closeModal('addLabelModal');
+            renderManageLabelsList(); // Re-render the list instead of closing
         }
 
         function handleAddReminder(event) {
@@ -1029,4 +1071,3 @@
     </script>
 </body>
 </html>
-```
