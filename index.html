@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flux | External Brain</title>
     
+    <link rel="icon" type="image/png" href="favicon-32x32.png">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -69,7 +71,10 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             overflow: hidden; /* Prevent body scroll, handle in containers */
+            
+            /* FIXED: Use dvh (dynamic viewport height) for mobile browsers to account for address bars */
             height: 100vh;
+            height: 100dvh; 
             width: 100vw;
         }
 
@@ -143,8 +148,9 @@
         /* Mobile specific adjustments for input visibility */
         @media (max-width: 640px) {
             .mobile-input-raised {
-                /* FIXED: Uses calc to add safe area ON TOP of base padding (2rem) */
-                padding-bottom: calc(2rem + env(safe-area-inset-bottom, 20px));
+                /* FIXED: Hardcoded large padding lift (4rem/64px) to force it up on Android */
+                /* We keep env() just in case, but rely on the 4rem base */
+                padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
             }
         }
     </style>
@@ -177,7 +183,7 @@
 
     <main class="flex-1 overflow-hidden w-full max-w-3xl mx-auto relative flex flex-col">
         
-        <div id="task-container" class="flex-1 overflow-y-auto custom-scroll px-4 pb-32 pt-2 scroll-smooth">
+        <div id="task-container" class="flex-1 overflow-y-auto custom-scroll px-4 pb-48 pt-2 scroll-smooth">
             
             <div id="empty-state" class="hidden h-full flex flex-col items-center justify-center text-slate-600 space-y-4 min-h-[40vh]">
                 <div class="w-16 h-16 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-2 border border-slate-700/50">
@@ -190,7 +196,7 @@
                 </ul>
         </div>
 
-        <div class="absolute bottom-0 left-0 w-full p-4 pb-8 md:pb-6 z-20 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent mobile-input-raised">
+        <div class="absolute bottom-0 left-0 w-full z-20 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent mobile-input-raised p-4">
             <div class="w-full max-w-3xl mx-auto relative">
                 
                 <div id="input-bar" class="glass-input rounded-2xl flex items-center p-1.5 pr-2 shadow-2xl relative z-10">
