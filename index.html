@@ -2,1072 +2,583 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PackMate - Holiday Packing App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flux | External Brain</title>
+    
+    <!-- Fonts: Inter for UI, JetBrains Mono for Code/Time -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        brand: {
+                            400: '#38bdf8', // Sky blue
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            glow: 'rgba(56, 189, 248, 0.5)'
+                        }
+                    },
+                    animation: {
+                        'enter': 'enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'wave': 'wave 1.2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        enter: {
+                            '0%': { opacity: '0', transform: 'translateY(10px) scale(0.98)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        wave: {
+                            '0%, 100%': { height: '20%' },
+                            '50%': { height: '100%' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
+        /* Base Reset & Variables */
+        :root {
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-highlight: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background-color: #020617;
+            color: #f1f5f9;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden; /* Prevent body scroll, handle in containers */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .glass-input {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-input:focus-within {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        }
+
+        /* Audio Visualizer Bars */
+        .wave-bar {
+            width: 4px;
+            background: #ef4444;
+            border-radius: 99px;
+            animation: wave 1s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(1) { animation-delay: 0.0s; height: 40%; }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 80%; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 50%; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 90%; }
+        .wave-bar:nth-child(5) { animation-delay: 0.15s; height: 60%; }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Custom Audio Player Styling */
+        audio {
+            width: 100%;
+            height: 36px;
+            filter: invert(1) hue-rotate(180deg) saturate(0.5);
+            opacity: 0.9;
+        }
+
+        /* Interaction Tweaks */
+        .tap-highlight-transparent {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .delete-swipe {
+            transform: translateX(0);
+            transition: transform 0.2s ease-out;
         }
         
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .card-shadow {
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .item-checked {
-            text-decoration: line-through;
-            opacity: 0.6;
-        }
-        
-        .tab-active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .label-tag {
-            transition: all 0.2s ease;
-        }
-        
-        .label-tag:hover {
-            transform: scale(1.05);
-        }
-        
-        .modal-overlay {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-        }
-        
-        .slide-in {
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
+        /* Mobile specific adjustments for input visibility */
+        @media (max-width: 640px) {
+            .mobile-input-raised {
+                padding-bottom: env(safe-area-inset-bottom);
             }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .pulse-ring {
-            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-        }
-        
-        @keyframes pulse-ring {
-            0% {
-                transform: scale(0.8);
-                opacity: 1;
-            }
-            80%, 100% {
-                transform: scale(1.3);
-                opacity: 0;
-            }
-        }
-        
-        input[type="checkbox"] {
-            accent-color: #667eea;
-        }
-        
-        .progress-bar {
-            transition: width 0.5s ease;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <header class="gradient-bg text-white py-6 px-4 sticky top-0 z-40">
-        <div class="max-w-4xl mx-auto">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-suitcase-rolling text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold">PackMate</h1>
-                        <p class="text-white/80 text-sm">Your holiday packing companion</p>
-                    </div>
-                </div>
-                <button onclick="openTripModal()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg flex items-center gap-2 transition-all">
-                    <i class="fas fa-plus"></i>
-                    <span class="hidden sm:inline">New Trip</span>
-                </button>
+<body class="flex flex-col relative selection:bg-brand-500 selection:text-white">
+
+    <!-- Ambient Background -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-blue-900/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[80vw] h-[80vw] bg-indigo-900/10 rounded-full blur-[120px] mix-blend-screen"></div>
+        <div class="absolute top-[40%] left-[50%] transform -translate-x-1/2 w-[60vw] h-[60vw] bg-cyan-900/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- Header / Status -->
+    <header class="flex-none px-6 pt-8 pb-4 w-full max-w-3xl mx-auto flex justify-between items-end z-10">
+        <div>
+            <div class="text-xs font-mono text-brand-400 mb-1 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-brand-400 shadow-[0_0_10px_#38bdf8]"></span>
+                <span id="date-display">LOADING...</span>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                Flux
+            </h1>
+        </div>
+        <div class="text-right">
+            <div id="task-progress" class="text-xs text-slate-400 font-mono">0/0</div>
+            <div class="w-24 h-1 bg-slate-800 rounded-full mt-2 overflow-hidden">
+                <div id="progress-bar" class="h-full bg-brand-500 w-0 transition-all duration-500 ease-out"></div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-6">
-        <div class="bg-white rounded-2xl card-shadow p-4 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="font-semibold text-gray-800">Current Trip</h2>
-                <select id="tripSelector" onchange="selectTrip(this.value)" class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                </select>
-            </div>
-            <div id="tripInfo" class="flex items-center gap-4 text-sm text-gray-600">
-            </div>
-            <div class="mt-4">
-                <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">Packing Progress</span>
-                    <span id="progressText" class="font-semibold text-purple-600">0%</span>
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-hidden w-full max-w-3xl mx-auto relative flex flex-col">
+        
+        <!-- Task List -->
+        <div id="task-container" class="flex-1 overflow-y-auto custom-scroll px-4 pb-32 pt-2 scroll-smooth">
+            
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden h-full flex flex-col items-center justify-center text-slate-600 space-y-4 min-h-[40vh]">
+                <div class="w-16 h-16 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-2 border border-slate-700/50">
+                    <i class="fa-solid fa-wind text-2xl text-slate-500"></i>
                 </div>
-                <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div id="progressBar" class="h-full gradient-bg progress-bar rounded-full" style="width: 0%"></div>
-                </div>
+                <p class="text-sm font-medium">Flow state active. No tasks pending.</p>
             </div>
+
+            <!-- List -->
+            <ul id="task-list" class="space-y-3">
+                <!-- Tasks Injected Here -->
+            </ul>
         </div>
 
-        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-            <button onclick="switchTab('packing')" id="tab-packing" class="tab-active px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all">
-                <i class="fas fa-box mr-2"></i>Packing List
-            </button>
-            <button onclick="switchTab('catalog')" id="tab-catalog" class="bg-white px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all hover:bg-gray-100">
-                <i class="fas fa-archive mr-2"></i>My Items
-            </button>
-            <button onclick="switchTab('todos')" id="tab-todos" class="bg-white px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all hover:bg-gray-100">
-                <i class="fas fa-tasks mr-2"></i>To-Do
-            </button>
-            <button onclick="switchTab('shopping')" id="tab-shopping" class="bg-white px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all hover:bg-gray-100">
-                <i class="fas fa-shopping-cart mr-2"></i>Shopping
-            </button>
-            <button onclick="switchTab('reminders')" id="tab-reminders" class="bg-white px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all hover:bg-gray-100">
-                <i class="fas fa-bell mr-2"></i>Reminders
-            </button>
-        </div>
+        <!-- Input Area (Fixed Bottom Mobile-First UX) -->
+        <div class="absolute bottom-0 left-0 w-full p-4 pb-6 z-20 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent mobile-input-raised">
+            <div class="w-full max-w-3xl mx-auto relative">
+                
+                <!-- Normal Input State -->
+                <div id="input-bar" class="glass-input rounded-2xl flex items-center p-1.5 pr-2 shadow-2xl relative z-10">
+                    
+                    <!-- Text Input -->
+                    <input 
+                        type="text" 
+                        id="task-input" 
+                        class="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 text-base md:text-lg px-4 py-3 min-w-0" 
+                        placeholder="Capture thought..." 
+                        autocomplete="off"
+                    >
+                    
+                    <!-- Divider -->
+                    <div class="w-px h-8 bg-slate-700 mx-2"></div>
 
-        <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-semibold text-gray-700">Filter by Label</h3>
-                <button onclick="openLabelModal()" class="text-purple-600 text-sm hover:text-purple-700">
-                    <i class="fas fa-cog mr-1"></i>Manage Labels
-                </button>
-            </div>
-            <div id="labelsContainer" class="flex flex-wrap gap-2">
-            </div>
-        </div>
+                    <!-- Voice Button -->
+                    <button 
+                        id="mic-btn" 
+                        class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors tap-highlight-transparent"
+                        aria-label="Record voice note"
+                    >
+                        <i class="fa-solid fa-microphone text-sm"></i>
+                    </button>
 
-        <div id="content-packing" class="tab-content">
-            <div class="bg-white rounded-2xl card-shadow p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Packing Checklist</h2>
-                    <button onclick="openAddItemModal('packing')" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        Add Item
+                    <!-- Add Button -->
+                    <button 
+                        id="add-btn" 
+                        class="ml-2 w-10 h-10 rounded-xl bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/20 transition-all active:scale-95 tap-highlight-transparent"
+                        aria-label="Add task"
+                    >
+                        <i class="fa-solid fa-arrow-up"></i>
                     </button>
                 </div>
-                <div id="packingList" class="space-y-3">
-                </div>
-            </div>
-        </div>
 
-        <div id="content-catalog" class="tab-content hidden">
-            <div class="bg-white rounded-2xl card-shadow p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Personal Items Catalog</h2>
-                    <button onclick="openAddItemModal('catalog')" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        Add to Catalog
-                    </button>
-                </div>
-                <p class="text-gray-500 text-sm mb-4">Your personal belongings you frequently pack</p>
-                <div id="catalogList" class="space-y-3">
-                </div>
-            </div>
-        </div>
+                <!-- Recording Overlay State -->
+                <div id="recording-bar" class="hidden absolute inset-0 glass-input rounded-2xl flex items-center justify-between p-2 z-20 border border-red-500/30 bg-slate-900/90">
+                    <div class="flex items-center pl-4 gap-3">
+                        <div class="flex items-center gap-1 h-8 w-12 justify-center">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                        <span id="recording-timer" class="font-mono text-red-400 text-sm tracking-wider">00:00</span>
+                    </div>
 
-        <div id="content-todos" class="tab-content hidden">
-            <div class="bg-white rounded-2xl card-shadow p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">To-Do List</h2>
-                    <button onclick="openAddItemModal('todos')" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        Add Task
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button 
+                            id="cancel-rec" 
+                            class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white transition-colors uppercase tracking-wider"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            id="save-rec" 
+                            class="w-10 h-10 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-500/20 active:scale-95 transition-transform"
+                        >
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    </div>
                 </div>
-                <div id="todosList" class="space-y-3">
-                </div>
-            </div>
-        </div>
 
-        <div id="content-shopping" class="tab-content hidden">
-            <div class="bg-white rounded-2xl card-shadow p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Shopping List</h2>
-                    <button onclick="openAddItemModal('shopping')" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        Add Item
-                    </button>
-                </div>
-                <p class="text-gray-500 text-sm mb-4">Items you need to buy for your trip</p>
-                <div id="shoppingList" class="space-y-3">
-                </div>
-            </div>
-        </div>
-
-        <div id="content-reminders" class="tab-content hidden">
-            <div class="bg-white rounded-2xl card-shadow p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Reminders</h2>
-                    <button onclick="openAddReminderModal()" class="gradient-bg text-white px-4 py-2 rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        Add Reminder
-                    </button>
-                </div>
-                <div id="remindersList" class="space-y-3">
-                </div>
             </div>
         </div>
     </main>
 
-    <div id="addItemModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 id="modalTitle" class="text-xl font-semibold">Add Item</h3>
-                    <button onclick="closeModal('addItemModal')" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <form id="addItemForm" onsubmit="handleAddItem(event)">
-                    <input type="hidden" id="itemType">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
-                            <input type="text" id="itemName" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., Passport, Sunscreen">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                            <input type="number" id="itemQuantity" value="1" min="1" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Label</label>
-                            <select id="itemLabel" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            </select>
-                        </div>
-                        <div id="timingField" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Timing</label>
-                            <select id="itemTiming" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                                <option value="before">Before Leaving Home</option>
-                                <option value="during">During Trip</option>
-                                <option value="arrival">On Arrival</option>
-                                <option value="return">Before Returning</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
-                            Add Item
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div id="addLabelModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-semibold">Manage Labels</h3>
-                    <button onclick="closeModal('addLabelModal')" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <form onsubmit="handleAddLabel(event)" class="mb-8 border-b pb-6">
-                    <h4 class="font-medium text-gray-800 mb-3">Create New Label</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Label Name</label>
-                            <input type="text" id="labelName" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., Beach Essentials">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                            <div class="flex gap-2 flex-wrap">
-                                <button type="button" onclick="selectColor('bg-red-500')" class="w-8 h-8 rounded-full bg-red-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-orange-500')" class="w-8 h-8 rounded-full bg-orange-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-yellow-500')" class="w-8 h-8 rounded-full bg-yellow-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-green-500')" class="w-8 h-8 rounded-full bg-green-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-teal-500')" class="w-8 h-8 rounded-full bg-teal-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-blue-500')" class="w-8 h-8 rounded-full bg-blue-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-purple-500')" class="w-8 h-8 rounded-full bg-purple-500 color-btn"></button>
-                                <button type="button" onclick="selectColor('bg-pink-500')" class="w-8 h-8 rounded-full bg-pink-500 color-btn"></button>
-                            </div>
-                            <input type="hidden" id="selectedColor" value="bg-blue-500">
-                        </div>
-                        <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
-                            Create Label
-                        </button>
-                    </div>
-                </form>
-
-                <div>
-                    <h4 class="font-medium text-gray-800 mb-3">Existing Labels</h4>
-                    <div id="existingLabelsList" class="space-y-2">
-                        </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="addReminderModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-semibold">Add Reminder</h3>
-                    <button onclick="closeModal('addReminderModal')" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <form onsubmit="handleAddReminder(event)">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Reminder Title</label>
-                            <input type="text" id="reminderTitle" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., Pack passport">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Date & Time</label>
-                            <input type="datetime-local" id="reminderDateTime" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
-                            <textarea id="reminderNotes" rows="2" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Any additional notes..."></textarea>
-                        </div>
-                        <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
-                            Set Reminder
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div id="addTripModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md card-shadow slide-in">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-semibold">Create New Trip</h3>
-                    <button onclick="closeModal('addTripModal')" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <form onsubmit="handleAddTrip(event)">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Trip Name</label>
-                            <input type="text" id="tripName" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., Summer Vacation 2024">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Destination</label>
-                            <input type="text" id="tripDestination" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., Bali, Indonesia">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                                <input type="date" id="tripStartDate" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                                <input type="date" id="tripEndDate" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Trip Type</label>
-                            <select id="tripType" class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                                <option value="vacation">🏖️ Vacation</option>
-                                <option value="business">💼 Business</option>
-                                <option value="camping">⛺ Camping</option>
-                                <option value="festival">🎵 Festival</option>
-                                <option value="moving">📦 Moving</option>
-                                <option value="picnic">🧺 Picnic</option>
-                                <option value="other">✨ Other</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
-                            Create Trip
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
+    <!-- Application Logic -->
     <script>
-        // State Management
-        let state = {
-            currentTrip: null,
-            trips: [],
-            labels: [
-                { id: 1, name: 'Clothing', color: 'bg-blue-500' },
-                { id: 2, name: 'Documents', color: 'bg-red-500' },
-                { id: 3, name: 'Electronics', color: 'bg-yellow-500' },
-                { id: 4, name: 'Toiletries', color: 'bg-green-500' },
-                { id: 5, name: 'Accessories', color: 'bg-purple-500' },
-                { id: 6, name: 'Medications', color: 'bg-pink-500' }
-            ],
-            catalog: [],
-            activeFilter: 'all',
-            activeTab: 'packing'
-        };
-
-        // Initialize app
-        function init() {
-            loadState();
-            if (state.trips.length === 0) {
-                // Create default trip
-                const defaultTrip = {
-                    id: Date.now(),
-                    name: 'Summer Vacation',
-                    destination: 'Beach Paradise',
-                    startDate: '2024-07-01',
-                    endDate: '2024-07-14',
-                    type: 'vacation',
-                    packingList: [
-                        { id: 1, name: 'Passport', quantity: 1, label: 2, checked: false },
-                        { id: 2, name: 'Sunscreen SPF 50', quantity: 2, label: 4, checked: false },
-                        { id: 3, name: 'Swimsuit', quantity: 3, label: 1, checked: true },
-                        { id: 4, name: 'Phone Charger', quantity: 1, label: 3, checked: false },
-                        { id: 5, name: 'Sunglasses', quantity: 1, label: 5, checked: false }
-                    ],
-                    todos: [
-                        { id: 1, name: 'Book taxi to airport', timing: 'before', checked: false },
-                        { id: 2, name: 'Charge power bank', timing: 'before', checked: true },
-                        { id: 3, name: 'Download offline maps', timing: 'before', checked: false },
-                        { id: 4, name: 'Check in online', timing: 'before', checked: false }
-                    ],
-                    shopping: [
-                        { id: 1, name: 'Travel adapter', quantity: 1, label: 3, checked: false },
-                        { id: 2, name: 'Beach towel', quantity: 2, label: 5, checked: false }
-                    ],
-                    reminders: [
-                        { id: 1, title: 'Pack passport', dateTime: '2024-06-30T09:00', notes: 'Check expiry date!' },
-                        { id: 2, title: 'Charge all devices', dateTime: '2024-06-30T20:00', notes: '' }
-                    ]
+        class FluxApp {
+            constructor() {
+                // DOM Elements
+                this.elements = {
+                    input: document.getElementById('task-input'),
+                    addBtn: document.getElementById('add-btn'),
+                    micBtn: document.getElementById('mic-btn'),
+                    taskList: document.getElementById('task-list'),
+                    taskContainer: document.getElementById('task-container'),
+                    emptyState: document.getElementById('empty-state'),
+                    inputBar: document.getElementById('input-bar'),
+                    recordingBar: document.getElementById('recording-bar'),
+                    recordingTimer: document.getElementById('recording-timer'),
+                    cancelRecBtn: document.getElementById('cancel-rec'),
+                    saveRecBtn: document.getElementById('save-rec'),
+                    dateDisplay: document.getElementById('date-display'),
+                    progressBar: document.getElementById('progress-bar'),
+                    progressText: document.getElementById('task-progress'),
                 };
-                state.trips.push(defaultTrip);
-                state.currentTrip = defaultTrip.id;
-            }
-            
-            // Add default catalog items
-            if (state.catalog.length === 0) {
-                state.catalog = [
-                    { id: 1, name: 'Passport', label: 2 },
-                    { id: 2, name: 'Phone Charger', label: 3 },
-                    { id: 3, name: 'Laptop', label: 3 },
-                    { id: 4, name: 'Toothbrush', label: 4 },
-                    { id: 5, name: 'T-Shirts', label: 1 }
-                ];
-            }
-            
-            saveState();
-            render();
-        }
 
-        // State persistence
-        function saveState() {
-            localStorage.setItem('packmate-state', JSON.stringify(state));
-        }
+                // State
+                this.tasks = JSON.parse(localStorage.getItem('flux_tasks')) || [];
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                this.timerInterval = null;
+                this.startTime = null;
 
-        function loadState() {
-            const saved = localStorage.getItem('packmate-state');
-            if (saved) {
-                state = JSON.parse(saved);
-            }
-        }
-
-        // Get current trip
-        function getCurrentTrip() {
-            return state.trips.find(t => t.id === state.currentTrip);
-        }
-
-        // Render functions
-        function render() {
-            renderTripSelector();
-            renderTripInfo();
-            renderLabels();
-            renderPackingList();
-            renderCatalog();
-            renderTodos();
-            renderShopping();
-            renderReminders();
-            updateProgress();
-            updateLabelSelect();
-        }
-
-        function renderTripSelector() {
-            const selector = document.getElementById('tripSelector');
-            selector.innerHTML = state.trips.map(trip => 
-                `<option value="${trip.id}" ${trip.id === state.currentTrip ? 'selected' : ''}>${trip.name}</option>`
-            ).join('');
-        }
-
-        function renderTripInfo() {
-            const trip = getCurrentTrip();
-            if (!trip) return;
-            
-            const tripInfo = document.getElementById('tripInfo');
-            const typeIcons = {
-                vacation: '🏖️',
-                business: '💼',
-                camping: '⛺',
-                festival: '🎵',
-                moving: '📦',
-                picnic: '🧺',
-                other: '✨'
-            };
-            
-            tripInfo.innerHTML = `
-                <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-purple-500"></i> ${trip.destination || 'No destination'}</span>
-                <span class="flex items-center gap-1"><i class="fas fa-calendar text-purple-500"></i> ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}</span>
-                <span>${typeIcons[trip.type] || '✨'} ${trip.type}</span>
-            `;
-        }
-
-        function renderLabels() {
-            const container = document.getElementById('labelsContainer');
-            container.innerHTML = `
-                <button onclick="filterByLabel('all')" class="label-tag px-3 py-1 rounded-full text-sm font-medium ${state.activeFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-700'}">
-                    All
-                </button>
-                ${state.labels.map(label => `
-                    <button onclick="filterByLabel(${label.id})" class="label-tag px-3 py-1 rounded-full text-sm font-medium ${state.activeFilter === label.id ? label.color + ' text-white' : 'bg-gray-200 text-gray-700'}">
-                        ${label.name}
-                    </button>
-                `).join('')}
-            `;
-        }
-
-        // NEW: Render the management list in the modal
-        function renderManageLabelsList() {
-            const container = document.getElementById('existingLabelsList');
-            if (!container) return;
-
-            if (state.labels.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-sm">No labels created yet.</p>';
-                return;
+                this.init();
             }
 
-            container.innerHTML = state.labels.map(label => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded-full ${label.color}"></div>
-                        <span class="text-gray-700 font-medium">${label.name}</span>
-                    </div>
-                    <button onclick="deleteLabel(${label.id})" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Delete Label">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function renderPackingList() {
-            const trip = getCurrentTrip();
-            if (!trip) return;
-            
-            const container = document.getElementById('packingList');
-            const filtered = filterItems(trip.packingList);
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-box-open text-4xl mb-3"></i>
-                        <p>No items yet. Add your first packing item!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = filtered.map(item => renderItem(item, 'packing')).join('');
-        }
-
-        function renderCatalog() {
-            const container = document.getElementById('catalogList');
-            const filtered = filterItems(state.catalog);
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-archive text-4xl mb-3"></i>
-                        <p>Your personal catalog is empty.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = filtered.map(item => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center text-white">
-                            <i class="fas fa-cube"></i>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-800">${item.name}</p>
-                            <span class="text-xs px-2 py-1 rounded-full ${getLabelColor(item.label)} text-white">${getLabelName(item.label)}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="addCatalogItemToPacking(${item.id})" class="text-purple-600 hover:text-purple-700 px-3 py-1 rounded-lg hover:bg-purple-100 transition-all" title="Add to packing list">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <button onclick="deleteItem(${item.id}, 'catalog')" class="text-red-400 hover:text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition-all">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderTodos() {
-            const trip = getCurrentTrip();
-            if (!trip) return;
-            
-            const container = document.getElementById('todosList');
-            
-            if (trip.todos.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-clipboard-list text-4xl mb-3"></i>
-                        <p>No tasks yet. Add your first to-do!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const timingLabels = {
-                before: { text: 'Before Leaving', color: 'bg-orange-100 text-orange-700' },
-                during: { text: 'During Trip', color: 'bg-blue-100 text-blue-700' },
-                arrival: { text: 'On Arrival', color: 'bg-green-100 text-green-700' },
-                return: { text: 'Before Return', color: 'bg-purple-100 text-purple-700' }
-            };
-            
-            container.innerHTML = trip.todos.map(item => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all ${item.checked ? 'item-checked' : ''}">
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleItem(${item.id}, 'todos')" class="w-5 h-5 rounded cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-800">${item.name}</p>
-                            <span class="text-xs px-2 py-1 rounded-full ${timingLabels[item.timing]?.color || 'bg-gray-100 text-gray-600'}">${timingLabels[item.timing]?.text || item.timing}</span>
-                        </div>
-                    </div>
-                    <button onclick="deleteItem(${item.id}, 'todos')" class="text-red-400 hover:text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition-all">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function renderShopping() {
-            const trip = getCurrentTrip();
-            if (!trip) return;
-            
-            const container = document.getElementById('shoppingList');
-            const filtered = filterItems(trip.shopping);
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-shopping-bag text-4xl mb-3"></i>
-                        <p>Your shopping list is empty.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = filtered.map(item => renderItem(item, 'shopping')).join('');
-        }
-
-        function renderReminders() {
-            const trip = getCurrentTrip();
-            if (!trip) return;
-            
-            const container = document.getElementById('remindersList');
-            
-            if (trip.reminders.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <i class="fas fa-bell text-4xl mb-3"></i>
-                        <p>No reminders set. Add one to stay on track!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = trip.reminders.map(reminder => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="relative">
-                            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-600">
-                                <i class="fas fa-bell"></i>
-                            </div>
-                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full pulse-ring"></div>
-                        </div>
-                        <div>
-                            <p class="font-medium text-gray-800">${reminder.title}</p>
-                            <p class="text-sm text-gray-500"><i class="fas fa-clock mr-1"></i>${formatDateTime(reminder.dateTime)}</p>
-                            ${reminder.notes ? `<p class="text-xs text-gray-400 mt-1">${reminder.notes}</p>` : ''}
-                        </div>
-                    </div>
-                    <button onclick="deleteReminder(${reminder.id})" class="text-red-400 hover:text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition-all">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function renderItem(item, type) {
-            return `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all ${item.checked ? 'item-checked' : ''}">
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleItem(${item.id}, '${type}')" class="w-5 h-5 rounded cursor-pointer">
-                        <div>
-                            <p class="font-medium text-gray-800">${item.name} ${item.quantity > 1 ? `<span class="text-gray-400">×${item.quantity}</span>` : ''}</p>
-                            <span class="text-xs px-2 py-1 rounded-full ${getLabelColor(item.label)} text-white">${getLabelName(item.label)}</span>
-                        </div>
-                    </div>
-                    <button onclick="deleteItem(${item.id}, '${type}')" class="text-red-400 hover:text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition-all">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-        }
-
-        function updateLabelSelect() {
-            const select = document.getElementById('itemLabel');
-            if (select) {
-                select.innerHTML = state.labels.map(label => 
-                    `<option value="${label.id}">${label.name}</option>`
-                ).join('');
-            }
-        }
-
-        function updateProgress() {
-            const trip = getCurrentTrip();
-            if (!trip) return;
-            
-            const total = trip.packingList.length;
-            const checked = trip.packingList.filter(item => item.checked).length;
-            const percentage = total > 0 ? Math.round((checked / total) * 100) : 0;
-            
-            document.getElementById('progressBar').style.width = `${percentage}%`;
-            document.getElementById('progressText').textContent = `${percentage}% (${checked}/${total})`;
-        }
-
-        // Helper functions
-        function getLabelName(labelId) {
-            const label = state.labels.find(l => l.id === labelId);
-            return label ? label.name : 'Uncategorized';
-        }
-
-        function getLabelColor(labelId) {
-            const label = state.labels.find(l => l.id === labelId);
-            return label ? label.color : 'bg-gray-500';
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return 'TBD';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-
-        function formatDateTime(dateTimeStr) {
-            if (!dateTimeStr) return 'TBD';
-            const date = new Date(dateTimeStr);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-
-        function filterItems(items) {
-            if (state.activeFilter === 'all') return items;
-            return items.filter(item => item.label === state.activeFilter);
-        }
-
-        // Event handlers
-        function switchTab(tab) {
-            state.activeTab = tab;
-            
-            // Update tab buttons
-            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
-                btn.classList.remove('tab-active');
-                btn.classList.add('bg-white');
-            });
-            document.getElementById(`tab-${tab}`).classList.add('tab-active');
-            document.getElementById(`tab-${tab}`).classList.remove('bg-white');
-            
-            // Update content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById(`content-${tab}`).classList.remove('hidden');
-        }
-
-        function filterByLabel(labelId) {
-            state.activeFilter = labelId;
-            renderLabels();
-            renderPackingList();
-            renderCatalog();
-            renderShopping();
-        }
-
-        function selectTrip(tripId) {
-            state.currentTrip = parseInt(tripId);
-            saveState();
-            render();
-        }
-
-        function toggleItem(itemId, type) {
-            const trip = getCurrentTrip();
-            let list;
-            
-            if (type === 'packing') list = trip.packingList;
-            else if (type === 'todos') list = trip.todos;
-            else if (type === 'shopping') list = trip.shopping;
-            
-            const item = list.find(i => i.id === itemId);
-            if (item) {
-                item.checked = !item.checked;
-                saveState();
-                render();
-            }
-        }
-
-        function deleteItem(itemId, type) {
-            const trip = getCurrentTrip();
-            
-            if (type === 'catalog') {
-                state.catalog = state.catalog.filter(i => i.id !== itemId);
-            } else if (type === 'packing') {
-                trip.packingList = trip.packingList.filter(i => i.id !== itemId);
-            } else if (type === 'todos') {
-                trip.todos = trip.todos.filter(i => i.id !== itemId);
-            } else if (type === 'shopping') {
-                trip.shopping = trip.shopping.filter(i => i.id !== itemId);
-            }
-            
-            saveState();
-            render();
-        }
-
-        function deleteReminder(reminderId) {
-            const trip = getCurrentTrip();
-            trip.reminders = trip.reminders.filter(r => r.id !== reminderId);
-            saveState();
-            render();
-        }
-
-        // NEW: Function to delete a label
-        function deleteLabel(labelId) {
-            if (!confirm('Are you sure? Items using this label will become Uncategorized.')) return;
-
-            // Remove label from state
-            state.labels = state.labels.filter(l => l.id !== labelId);
-
-            // If the deleted label was the active filter, reset to 'all'
-            if (state.activeFilter === labelId) {
-                state.activeFilter = 'all';
+            init() {
+                this.updateDate();
+                this.renderTasks();
+                this.attachEventListeners();
+                
+                // Focus handling for desktop
+                if (window.matchMedia("(min-width: 768px)").matches) {
+                    this.elements.input.focus();
+                }
             }
 
-            saveState();
-            render();
-            renderManageLabelsList(); // Re-render the list in the modal
-        }
+            updateDate() {
+                const now = new Date();
+                const options = { weekday: 'short', month: 'short', day: 'numeric' };
+                this.elements.dateDisplay.textContent = now.toLocaleDateString('en-US', options).toUpperCase();
+            }
 
-        function addCatalogItemToPacking(catalogItemId) {
-            const catalogItem = state.catalog.find(i => i.id === catalogItemId);
-            if (!catalogItem) return;
-            
-            const trip = getCurrentTrip();
-            const newItem = {
-                id: Date.now(),
-                name: catalogItem.name,
-                quantity: 1,
-                label: catalogItem.label,
-                checked: false
-            };
-            
-            trip.packingList.push(newItem);
-            saveState();
-            render();
-            
-            // Show feedback
-            switchTab('packing');
-        }
-
-        // Modal functions
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.remove('hidden');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        function openAddItemModal(type) {
-            document.getElementById('itemType').value = type;
-            document.getElementById('modalTitle').textContent = type === 'todos' ? 'Add Task' : 'Add Item';
-            document.getElementById('timingField').classList.toggle('hidden', type !== 'todos');
-            document.getElementById('addItemForm').reset();
-            document.getElementById('itemQuantity').value = 1;
-            updateLabelSelect();
-            openModal('addItemModal');
-        }
-
-        function openLabelModal() {
-            document.getElementById('labelName').value = '';
-            selectColor('bg-blue-500');
-            renderManageLabelsList(); // Render existing labels when modal opens
-            openModal('addLabelModal');
-        }
-
-        function openAddReminderModal() {
-            document.getElementById('reminderTitle').value = '';
-            document.getElementById('reminderDateTime').value = '';
-            document.getElementById('reminderNotes').value = '';
-            openModal('addReminderModal');
-        }
-
-        function openTripModal() {
-            document.getElementById('tripName').value = '';
-            document.getElementById('tripDestination').value = '';
-            document.getElementById('tripStartDate').value = '';
-            document.getElementById('tripEndDate').value = '';
-            document.getElementById('tripType').value = 'vacation';
-            openModal('addTripModal');
-        }
-
-        function selectColor(color) {
-            document.getElementById('selectedColor').value = color;
-            document.querySelectorAll('.color-btn').forEach(btn => {
-                btn.classList.remove('ring-2', 'ring-offset-2', 'ring-gray-400');
-            });
-            event.target.classList.add('ring-2', 'ring-offset-2', 'ring-gray-400');
-        }
-
-        // Form handlers
-        function handleAddItem(event) {
-            event.preventDefault();
-            
-            const type = document.getElementById('itemType').value;
-            const name = document.getElementById('itemName').value;
-            const quantity = parseInt(document.getElementById('itemQuantity').value);
-            const label = parseInt(document.getElementById('itemLabel').value);
-            
-            const trip = getCurrentTrip();
-            
-            if (type === 'todos') {
-                const timing = document.getElementById('itemTiming').value;
-                trip.todos.push({
-                    id: Date.now(),
-                    name,
-                    timing,
-                    checked: false
+            attachEventListeners() {
+                // Add Task Text
+                this.elements.addBtn.addEventListener('click', () => this.addTask());
+                this.elements.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTask();
                 });
-            } else if (type === 'catalog') {
-                state.catalog.push({
-                    id: Date.now(),
-                    name,
-                    label
+
+                // Audio Recording
+                this.elements.micBtn.addEventListener('click', () => this.startRecording());
+                this.elements.cancelRecBtn.addEventListener('click', () => this.cancelRecording());
+                this.elements.saveRecBtn.addEventListener('click', () => this.stopRecording());
+
+                // Task Interactions (Delegation)
+                this.elements.taskList.addEventListener('click', (e) => {
+                    const item = e.target.closest('li');
+                    if (!item) return;
+                    const id = item.dataset.id;
+
+                    if (e.target.closest('.delete-action')) {
+                        this.deleteTask(id);
+                    } else if (e.target.closest('.check-action') || e.target.closest('.task-content')) {
+                        this.toggleTask(id);
+                    }
                 });
-            } else {
-                const newItem = {
-                    id: Date.now(),
-                    name,
-                    quantity,
-                    label,
-                    checked: false
+            }
+
+            // --- Core Task Logic ---
+
+            saveToStorage() {
+                try {
+                    localStorage.setItem('flux_tasks', JSON.stringify(this.tasks));
+                } catch (e) {
+                    alert('Storage full. Please delete some voice notes.');
+                }
+                this.renderTasks();
+            }
+
+            addTask() {
+                const text = this.elements.input.value.trim();
+                if (!text) return;
+
+                const task = {
+                    id: Date.now().toString(),
+                    type: 'text',
+                    content: text,
+                    created: Date.now(),
+                    completed: false
+                };
+
+                this.tasks.unshift(task);
+                this.elements.input.value = '';
+                this.saveToStorage();
+                
+                // Scroll to top
+                this.elements.taskContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            addAudioTask(base64Audio) {
+                const task = {
+                    id: Date.now().toString(),
+                    type: 'audio',
+                    content: base64Audio,
+                    created: Date.now(),
+                    completed: false
+                };
+                this.tasks.unshift(task);
+                this.saveToStorage();
+                this.elements.taskContainer.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            deleteTask(id) {
+                const el = document.querySelector(`li[data-id="${id}"]`);
+                if(el) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        this.tasks = this.tasks.filter(t => t.id !== id);
+                        this.saveToStorage();
+                    }, 300);
+                }
+            }
+
+            toggleTask(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    this.saveToStorage();
+                }
+            }
+
+            // --- Recording Logic ---
+
+            async startRecording() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Microphone not supported on this device/browser.');
+                    return;
+                }
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+
+                    this.mediaRecorder.ondataavailable = e => this.audioChunks.push(e.data);
+                    
+                    this.mediaRecorder.start();
+                    this.uiSetRecording(true);
+                    this.startTimer();
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Please allow microphone access to record voice notes.');
+                }
+            }
+
+            stopRecording() {
+                if (!this.mediaRecorder) return;
+                
+                this.mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        this.addAudioTask(reader.result);
+                    };
+                    this.cleanupRecording();
                 };
                 
-                if (type === 'packing') {
-                    trip.packingList.push(newItem);
-                } else if (type === 'shopping') {
-                    trip.shopping.push(newItem);
+                this.mediaRecorder.stop();
+            }
+
+            cancelRecording() {
+                if (this.mediaRecorder) {
+                    this.mediaRecorder.onstop = () => this.cleanupRecording();
+                    this.mediaRecorder.stop();
+                } else {
+                    this.cleanupRecording();
                 }
             }
-            
-            saveState();
-            render();
-            closeModal('addItemModal');
-        }
 
-        function handleAddLabel(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('labelName').value;
-            const color = document.getElementById('selectedColor').value;
-            
-            state.labels.push({
-                id: Date.now(),
-                name,
-                color
-            });
-            
-            // Reset form
-            document.getElementById('labelName').value = '';
-            selectColor('bg-blue-500');
-
-            saveState();
-            render();
-            renderManageLabelsList(); // Re-render the list instead of closing
-        }
-
-        function handleAddReminder(event) {
-            event.preventDefault();
-            
-            const title = document.getElementById('reminderTitle').value;
-            const dateTime = document.getElementById('reminderDateTime').value;
-            const notes = document.getElementById('reminderNotes').value;
-            
-            const trip = getCurrentTrip();
-            trip.reminders.push({
-                id: Date.now(),
-                title,
-                dateTime,
-                notes
-            });
-            
-            saveState();
-            render();
-            closeModal('addReminderModal');
-        }
-
-        function handleAddTrip(event) {
-            event.preventDefault();
-            
-            const newTrip = {
-                id: Date.now(),
-                name: document.getElementById('tripName').value,
-                destination: document.getElementById('tripDestination').value,
-                startDate: document.getElementById('tripStartDate').value,
-                endDate: document.getElementById('tripEndDate').value,
-                type: document.getElementById('tripType').value,
-                packingList: [],
-                todos: [],
-                shopping: [],
-                reminders: []
-            };
-            
-            state.trips.push(newTrip);
-            state.currentTrip = newTrip.id;
-            
-            saveState();
-            render();
-            closeModal('addTripModal');
-        }
-
-        // Close modals on outside click
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.add('hidden');
+            cleanupRecording() {
+                if(this.mediaRecorder) {
+                    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 }
-            });
-        });
+                this.uiSetRecording(false);
+                this.stopTimer();
+            }
 
-        // Initialize the app
-        init();
+            uiSetRecording(isRecording) {
+                if (isRecording) {
+                    this.elements.inputBar.classList.add('invisible');
+                    this.elements.recordingBar.classList.remove('hidden');
+                    this.elements.recordingBar.classList.add('flex');
+                } else {
+                    this.elements.inputBar.classList.remove('invisible');
+                    this.elements.recordingBar.classList.add('hidden');
+                    this.elements.recordingBar.classList.remove('flex');
+                }
+            }
+
+            startTimer() {
+                this.startTime = Date.now();
+                this.elements.recordingTimer.innerText = "00:00";
+                this.timerInterval = setInterval(() => {
+                    const diff = Math.floor((Date.now() - this.startTime) / 1000);
+                    const m = Math.floor(diff / 60).toString().padStart(2, '0');
+                    const s = (diff % 60).toString().padStart(2, '0');
+                    this.elements.recordingTimer.innerText = `${m}:${s}`;
+                }, 1000);
+            }
+
+            stopTimer() {
+                clearInterval(this.timerInterval);
+            }
+
+            // --- Rendering ---
+
+            renderTasks() {
+                const list = this.elements.taskList;
+                list.innerHTML = '';
+
+                // Calculate Progress
+                const total = this.tasks.length;
+                const completed = this.tasks.filter(t => t.completed).length;
+                this.elements.progressText.innerText = `${completed}/${total}`;
+                this.elements.progressBar.style.width = total === 0 ? '0%' : `${(completed / total) * 100}%`;
+
+                // Empty State
+                if (total === 0) {
+                    this.elements.emptyState.classList.remove('hidden');
+                    return;
+                }
+                this.elements.emptyState.classList.add('hidden');
+
+                // Sort: Pending first, then by time
+                const sortedTasks = [...this.tasks].sort((a, b) => {
+                    if (a.completed === b.completed) return b.created - a.created;
+                    return a.completed ? 1 : -1;
+                });
+
+                sortedTasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    li.dataset.id = task.id;
+                    li.className = `group animate-enter transition-all duration-300 ${task.completed ? 'opacity-50' : 'opacity-100'}`;
+                    li.style.animationDelay = `${index * 50}ms`;
+
+                    const date = new Date(task.created);
+                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' }).toLowerCase();
+
+                    // HTML Content Generation
+                    let contentHtml = '';
+                    if (task.type === 'text') {
+                        contentHtml = `<div class="task-content text-sm md:text-base font-medium text-slate-100 break-words leading-relaxed cursor-pointer select-none ${task.completed ? 'line-through text-slate-500' : ''}">${this.escapeHtml(task.content)}</div>`;
+                    } else {
+                        contentHtml = `
+                            <div class="w-full">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-[10px] font-bold text-brand-400 uppercase tracking-widest bg-brand-900/30 px-2 py-0.5 rounded border border-brand-500/20">Voice Note</span>
+                                </div>
+                                <audio controls src="${task.content}" class="w-full rounded-lg"></audio>
+                            </div>
+                        `;
+                    }
+
+                    li.innerHTML = `
+                        <div class="glass-panel p-4 rounded-xl flex items-start gap-4 hover:border-slate-600 transition-colors relative overflow-hidden">
+                            <!-- Checkbox -->
+                            <button class="check-action mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 ${task.completed ? 'bg-green-500 border-green-500' : 'border-slate-500 hover:border-brand-400'} flex items-center justify-center transition-all">
+                                <i class="fa-solid fa-check text-xs text-white ${task.completed ? 'opacity-100' : 'opacity-0'}"></i>
+                            </button>
+
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0 flex flex-col gap-1">
+                                ${contentHtml}
+                                <div class="text-[10px] font-mono text-slate-500 mt-1">${timeStr}</div>
+                            </div>
+
+                            <!-- Delete (Hover/Focus) -->
+                            <button class="delete-action w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 focus:opacity-100 absolute top-2 right-2 md:static md:w-auto md:h-auto md:bg-transparent">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    list.appendChild(li);
+                });
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new FluxApp();
+        });
     </script>
 </body>
 </html>
