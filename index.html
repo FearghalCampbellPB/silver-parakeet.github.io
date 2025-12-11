@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flux | External Brain</title>
     
-    <!-- Fonts: Inter for UI, JetBrains Mono for Code/Time -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Configuration -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -147,21 +143,20 @@
         /* Mobile specific adjustments for input visibility */
         @media (max-width: 640px) {
             .mobile-input-raised {
-                padding-bottom: env(safe-area-inset-bottom);
+                /* FIXED: Uses calc to add safe area ON TOP of base padding (2rem) */
+                padding-bottom: calc(2rem + env(safe-area-inset-bottom, 20px));
             }
         }
     </style>
 </head>
 <body class="flex flex-col relative selection:bg-brand-500 selection:text-white">
 
-    <!-- Ambient Background -->
     <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
         <div class="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] bg-blue-900/20 rounded-full blur-[120px] mix-blend-screen animate-pulse-slow"></div>
         <div class="absolute bottom-[-10%] right-[-10%] w-[80vw] h-[80vw] bg-indigo-900/10 rounded-full blur-[120px] mix-blend-screen"></div>
         <div class="absolute top-[40%] left-[50%] transform -translate-x-1/2 w-[60vw] h-[60vw] bg-cyan-900/10 rounded-full blur-[100px]"></div>
     </div>
 
-    <!-- Header / Status -->
     <header class="flex-none px-6 pt-8 pb-4 w-full max-w-3xl mx-auto flex justify-between items-end z-10">
         <div>
             <div class="text-xs font-mono text-brand-400 mb-1 flex items-center gap-2">
@@ -180,13 +175,10 @@
         </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="flex-1 overflow-hidden w-full max-w-3xl mx-auto relative flex flex-col">
         
-        <!-- Task List -->
         <div id="task-container" class="flex-1 overflow-y-auto custom-scroll px-4 pb-32 pt-2 scroll-smooth">
             
-            <!-- Empty State -->
             <div id="empty-state" class="hidden h-full flex flex-col items-center justify-center text-slate-600 space-y-4 min-h-[40vh]">
                 <div class="w-16 h-16 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-2 border border-slate-700/50">
                     <i class="fa-solid fa-wind text-2xl text-slate-500"></i>
@@ -194,20 +186,15 @@
                 <p class="text-sm font-medium">Flow state active. No tasks pending.</p>
             </div>
 
-            <!-- List -->
             <ul id="task-list" class="space-y-3">
-                <!-- Tasks Injected Here -->
-            </ul>
+                </ul>
         </div>
 
-        <!-- Input Area (Fixed Bottom Mobile-First UX) -->
-        <div class="absolute bottom-0 left-0 w-full p-4 pb-6 z-20 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent mobile-input-raised">
+        <div class="absolute bottom-0 left-0 w-full p-4 pb-8 md:pb-6 z-20 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent mobile-input-raised">
             <div class="w-full max-w-3xl mx-auto relative">
                 
-                <!-- Normal Input State -->
                 <div id="input-bar" class="glass-input rounded-2xl flex items-center p-1.5 pr-2 shadow-2xl relative z-10">
                     
-                    <!-- Text Input -->
                     <input 
                         type="text" 
                         id="task-input" 
@@ -216,10 +203,8 @@
                         autocomplete="off"
                     >
                     
-                    <!-- Divider -->
                     <div class="w-px h-8 bg-slate-700 mx-2"></div>
 
-                    <!-- Voice Button -->
                     <button 
                         id="mic-btn" 
                         class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors tap-highlight-transparent"
@@ -228,7 +213,6 @@
                         <i class="fa-solid fa-microphone text-sm"></i>
                     </button>
 
-                    <!-- Add Button -->
                     <button 
                         id="add-btn" 
                         class="ml-2 w-10 h-10 rounded-xl bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/20 transition-all active:scale-95 tap-highlight-transparent"
@@ -238,7 +222,6 @@
                     </button>
                 </div>
 
-                <!-- Recording Overlay State -->
                 <div id="recording-bar" class="hidden absolute inset-0 glass-input rounded-2xl flex items-center justify-between p-2 z-20 border border-red-500/30 bg-slate-900/90">
                     <div class="flex items-center pl-4 gap-3">
                         <div class="flex items-center gap-1 h-8 w-12 justify-center">
@@ -271,7 +254,6 @@
         </div>
     </main>
 
-    <!-- Application Logic -->
     <script>
         class FluxApp {
             constructor() {
@@ -546,18 +528,15 @@
 
                     li.innerHTML = `
                         <div class="glass-panel p-4 rounded-xl flex items-start gap-4 hover:border-slate-600 transition-colors relative overflow-hidden">
-                            <!-- Checkbox -->
                             <button class="check-action mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 ${task.completed ? 'bg-green-500 border-green-500' : 'border-slate-500 hover:border-brand-400'} flex items-center justify-center transition-all">
                                 <i class="fa-solid fa-check text-xs text-white ${task.completed ? 'opacity-100' : 'opacity-0'}"></i>
                             </button>
 
-                            <!-- Content -->
                             <div class="flex-1 min-w-0 flex flex-col gap-1">
                                 ${contentHtml}
                                 <div class="text-[10px] font-mono text-slate-500 mt-1">${timeStr}</div>
                             </div>
 
-                            <!-- Delete (Hover/Focus) -->
                             <button class="delete-action w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 focus:opacity-100 absolute top-2 right-2 md:static md:w-auto md:h-auto md:bg-transparent">
                                 <i class="fa-regular fa-trash-can"></i>
                             </button>
